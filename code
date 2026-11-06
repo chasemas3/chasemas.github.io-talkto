@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 font-sans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolTalk - Study, Chat & Collaborate</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#5865F2',
+                            600: '#4752C4',
+                            700: '#3C45A5'
+                        },
+                        st: {
+                            sidebar: '#111827',
+                            channels: '#1f2937',
+                            chat: '#111827',
+                            members: '#1f2937',
+                            hover: '#374151',
+                            active: '#4b5563'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden select-none">
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="h-full w-full flex">
+        
+        <!-- AUTH CONTAINER (Login / Signup Modal Screen) -->
+        <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4">
+            <div class="bg-st-channels p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500 mb-3 text-white text-3xl shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <h2 id="auth-title" class="text-2xl font-bold text-white tracking-wide">Welcome to SchoolTalk</h2>
+                    <p id="auth-subtitle" class="text-slate-400 text-sm mt-1">Connect with classmates, study groups, and campus channels.</p>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-300 mb-2">Username</label>
+                        <input type="text" id="auth-username" required placeholder="e.g. Alex_Student" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-300 mb-2">Password</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-brand-500 transition">
+                    </div>
+
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition duration-200">
+                        Log In
+                    </button>
+                </form>
+
+                <div class="mt-4 text-sm text-slate-400 text-center">
+                    <span id="auth-switch-text">Need a SchoolTalk account?</span>
+                    <button type="button" onclick="toggleAuthMode()" id="auth-switch-btn" class="text-brand-500 hover:underline font-medium ml-1">Register</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN SCHOOLTALK INTERFACE -->
+        <div id="main-interface" class="h-full w-full flex overflow-hidden hidden">
+
+            <!-- 1. SERVERS SIDEBAR -->
+            <div class="w-18 bg-st-sidebar flex flex-col items-center py-3 gap-2 z-20 shrink-0 border-r border-slate-800/40">
+                <!-- Direct Messages / Home Button -->
+                <button onclick="switchGroup('home')" id="btn-home" class="group relative w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-slate-800 hover:bg-brand-500 flex items-center justify-center transition-all duration-200 text-white shadow">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    <span class="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition duration-150 z-50 pointer-events-none border border-slate-800">Home & Friends</span>
+                </button>
+
+                <div class="w-8 h-[2px] bg-slate-800 rounded my-1"></div>
+
+                <!-- Group Icons List -->
+                <div id="server-list" class="flex-1 w-full flex flex-col items-center gap-2 overflow-y-auto no-scrollbar">
+                    <!-- Dynamic server buttons appended here -->
+                </div>
+
+                <!-- Add Group Button -->
+                <button onclick="openCreateGroupModal()" class="group relative w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-slate-800 hover:bg-emerald-500 flex items-center justify-center transition-all duration-200 text-emerald-400 hover:text-white shadow">
+                    <i class="fa-solid fa-plus text-lg"></i>
+                    <span class="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition duration-150 z-50 pointer-events-none border border-slate-800">Create Study Group</span>
+                </button>
+
+                <!-- Join via Invite Code -->
+                <button onclick="openJoinInviteModal()" class="group relative w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-slate-800 hover:bg-sky-500 flex items-center justify-center transition-all duration-200 text-sky-400 hover:text-white shadow">
+                    <i class="fa-solid fa-compass text-lg"></i>
+                    <span class="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition duration-150 z-50 pointer-events-none border border-slate-800">Join via Invite Code</span>
+                </button>
+            </div>
+
+            <!-- 2. CHANNELS & VOICE CONTROL PANEL -->
+            <div class="w-60 bg-st-channels flex flex-col shrink-0 z-10 border-r border-slate-800/40">
+                <!-- Group Header -->
+                <div class="h-12 border-b border-slate-800 px-4 flex items-center justify-between shadow-sm">
+                    <h1 id="current-group-title" class="font-bold text-white truncate text-sm">Computer Science 101</h1>
+                    <div class="flex items-center space-x-1">
+                        <button id="add-member-btn" onclick="openAddMemberModal()" class="text-slate-400 hover:text-emerald-400 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition flex items-center gap-1" title="Add Friend to Group">
+                            <i class="fa-solid fa-user-plus text-[10px]"></i>
+                        </button>
+                        <button id="invite-btn" onclick="showInviteCodeModal()" class="text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition flex items-center gap-1" title="Get Invite Code">
+                            <i class="fa-solid fa-link text-[10px]"></i> Invite
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Channels Scrollable Area -->
+                <div id="channels-panel-content" class="flex-1 overflow-y-auto p-2 space-y-4">
+                    <!-- Text Channels Section -->
+                    <div id="text-channels-section">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 px-2 mb-1 uppercase tracking-wider">
+                            <span><i class="fa-solid fa-chevron-down text-[9px] mr-1"></i> Text Channels</span>
+                        </div>
+                        <div id="text-channels-list" class="space-y-0.5">
+                            <!-- Dynamic Text Channels -->
+                        </div>
+                    </div>
+
+                    <!-- Voice Channels Section -->
+                    <div id="voice-channels-section">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 px-2 mb-1 uppercase tracking-wider">
+                            <span><i class="fa-solid fa-chevron-down text-[9px] mr-1"></i> Voice Channels</span>
+                        </div>
+                        <div id="voice-channels-list" class="space-y-0.5">
+                            <!-- Dynamic Voice Channels -->
+                        </div>
+                    </div>
+
+                    <!-- Direct Messages Section (Home view) -->
+                    <div id="dm-channels-section" class="hidden">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 px-2 mb-1 uppercase tracking-wider">
+                            <span>Direct Messages</span>
+                        </div>
+                        <div id="dm-channels-list" class="space-y-0.5">
+                            <!-- Dynamic DMs -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VOICE CALL CONTROL PANEL (Bottom Left Active Call Card) -->
+                <div id="voice-panel" class="hidden bg-slate-950 p-3 border-t border-slate-800 flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="relative flex h-2.5 w-2.5">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                            <div>
+                                <div class="text-xs font-semibold text-emerald-400">Voice Connected</div>
+                                <div id="voice-channel-name" class="text-[10px] text-slate-400 truncate max-w-[110px]">Study Lounge</div>
+                            </div>
+                        </div>
+                        <button onclick="leaveVoiceCall()" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 transition" title="Disconnect">
+                            <i class="fa-solid fa-phone-slash text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Audio Visualizer Waveform -->
+                    <div class="flex items-center justify-center space-x-1 h-5 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                        <div id="bar1" class="w-1 bg-emerald-500 rounded-full h-1 transition-all duration-75"></div>
+                        <div id="bar2" class="w-1 bg-emerald-500 rounded-full h-2 transition-all duration-75"></div>
+                        <div id="bar3" class="w-1 bg-emerald-500 rounded-full h-1 transition-all duration-75"></div>
+                        <div id="bar4" class="w-1 bg-emerald-500 rounded-full h-3 transition-all duration-75"></div>
+                        <div id="bar5" class="w-1 bg-emerald-500 rounded-full h-1 transition-all duration-75"></div>
+                    </div>
+
+                    <!-- Voice Control Buttons: Mute & Deafen -->
+                    <div class="flex items-center justify-between bg-slate-900 rounded-lg p-1 border border-slate-800 gap-1">
+                        <button id="mute-btn" onclick="toggleMute()" class="flex-1 py-1.5 px-2 text-xs text-slate-300 hover:bg-slate-800 rounded-md flex items-center justify-center space-x-1.5 transition">
+                            <i id="mute-icon" class="fa-solid fa-microphone"></i>
+                            <span id="mute-text">Mute</span>
+                        </button>
+                        <button id="deafen-btn" onclick="toggleDeafen()" class="flex-1 py-1.5 px-2 text-xs text-slate-300 hover:bg-slate-800 rounded-md flex items-center justify-center space-x-1.5 transition">
+                            <i id="deafen-icon" class="fa-solid fa-headphones"></i>
+                            <span id="deafen-text">Deafen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- USER PROFILE FOOTER -->
+                <div class="h-14 bg-slate-950 px-2 flex items-center justify-between border-t border-slate-800/80">
+                    <div class="flex items-center space-x-2.5 overflow-hidden cursor-pointer p-1.5 rounded-lg hover:bg-slate-800 transition flex-1" onclick="openProfileModal()">
+                        <div class="relative">
+                            <img id="user-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Student" class="w-8 h-8 rounded-full bg-slate-700 object-cover border border-slate-700">
+                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-950 rounded-full"></span>
+                        </div>
+                        <div class="truncate">
+                            <div id="user-display-name" class="text-xs font-bold text-white truncate">Username</div>
+                            <div class="text-[10px] text-slate-400 truncate">Online</div>
+                        </div>
+                    </div>
+
+                    <button onclick="logout()" class="text-slate-400 hover:text-rose-400 p-2 rounded-lg hover:bg-slate-800 transition" title="Log Out">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. MAIN CHAT & CALL WINDOW -->
+            <div class="flex-1 bg-st-chat flex flex-col h-full overflow-hidden">
+                <!-- Chat Header -->
+                <div class="h-12 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 shadow-sm bg-slate-900/40">
+                    <div class="flex items-center space-x-2">
+                        <span id="chat-header-hash" class="text-slate-400 text-lg font-bold">#</span>
+                        <span id="chat-header-title" class="font-bold text-white text-sm">general</span>
+                    </div>
+                    <!-- Home Friends Top Navigation Tabs -->
+                    <div id="friends-nav-tabs" class="flex items-center space-x-2">
+                        <button onclick="setFriendsTab('online')" id="tab-friends-online" class="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-slate-800">Online</button>
+                        <button onclick="setFriendsTab('all')" id="tab-friends-all" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">All Friends</button>
+                        <button onclick="setFriendsTab('pending')" id="tab-friends-pending" class="relative px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">
+                            Pending
+                            <span id="pending-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                        </button>
+                        <button onclick="setFriendsTab('add')" id="tab-friends-add" class="px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition">Add Friend</button>
+                    </div>
+                </div>
+
+                <!-- Friends Dashboard Area -->
+                <div id="friends-dashboard" class="flex-1 overflow-y-auto p-6 hidden">
+                    <!-- Add Friend Tab Content -->
+                    <div id="friends-tab-add-content" class="max-w-2xl">
+                        <h2 class="text-lg font-bold text-white uppercase tracking-wide text-xs mb-1">Add Friend</h2>
+                        <p class="text-xs text-slate-400 mb-4">You can add classmates by searching their username or selecting from discovered SchoolTalk students.</p>
+                        
+                        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-2 mb-6 focus-within:border-brand-500">
+                            <input type="text" id="add-friend-input" placeholder="You can add friends with their SchoolTalk username..." class="bg-transparent flex-1 px-3 text-white text-sm focus:outline-none">
+                            <button onclick="sendFriendRequestFromInput()" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow">Send Request</button>
+                        </div>
+
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Discover Classmates</h3>
+                        <div id="discover-users-list" class="space-y-2">
+                            <!-- Dynamically populated registered users -->
+                        </div>
+                    </div>
+
+                    <!-- Friends List Tabs (Online / All / Pending) -->
+                    <div id="friends-tab-list-content">
+                        <div id="friends-list-container" class="space-y-2 max-w-3xl">
+                            <!-- Dynamic Friends / Pending items -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- Messages dynamically rendered -->
+                </div>
+
+                <!-- Chat Input Form -->
+                <div id="chat-input-wrapper" class="p-4 shrink-0 bg-slate-950/40 border-t border-slate-800/50">
+                    <form onsubmit="sendMessage(event)" class="bg-slate-900 rounded-xl px-4 py-3 flex items-center space-x-3 border border-slate-800 focus-within:border-brand-500 transition">
+                        <input type="text" id="chat-input" placeholder="Message #general" class="bg-transparent flex-1 text-white text-sm focus:outline-none placeholder-slate-500">
+                        <button type="submit" class="text-brand-500 hover:text-brand-600 transition p-1">
+                            <i class="fa-solid fa-paper-plane text-base"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. MEMBERS LIST SIDEBAR -->
+            <div class="w-60 bg-st-members hidden lg:flex flex-col shrink-0 border-l border-slate-800/40 p-3">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 px-2">
+                    Classmates — <span id="online-count">1</span>
+                </div>
+                <div id="members-list" class="space-y-1 overflow-y-auto">
+                    <!-- Dynamic Members appended -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Profile Edit / Avatar Upload Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="bg-st-channels p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800">
+            <h3 class="text-xl font-bold text-white mb-4">Edit SchoolTalk Profile</h3>
+            <div class="flex flex-col items-center mb-6 space-y-4">
+                <img id="modal-avatar-preview" src="" class="w-24 h-24 rounded-full bg-slate-800 object-cover border-4 border-brand-500 shadow-md">
+                <label class="cursor-pointer bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition shadow">
+                    Upload Custom Picture
+                    <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
+                </label>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeProfileModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-xl transition">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="bg-st-channels p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800">
+            <h3 class="text-xl font-bold text-white mb-1">Create a Study Group</h3>
+            <p class="text-xs text-slate-400 mb-4">Set up a space for your class, project team, or student club.</p>
+            <input type="text" id="new-group-name" placeholder="e.g. Physics Project Squad" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-brand-500 mb-4">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeCreateGroupModal()" class="px-4 py-2 text-slate-400 hover:text-white text-xs transition">Cancel</button>
+                <button onclick="createGroup()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl transition shadow">Create Group</button>
+            </div>
+        </div>
+    </div>
+    <!-- Add Friend Direct to Server Modal -->
+    <div id="add-member-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="bg-st-channels p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800">
+            <h3 class="text-xl font-bold text-white mb-1">Add Friends to Group</h3>
+            <p class="text-xs text-slate-400 mb-4">Select friends to instantly invite them to this study group.</p>
+            <div id="invite-friends-list" class="space-y-2 max-h-60 overflow-y-auto mb-4 p-1">
+                <!-- Dynamically populated friend items -->
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeAddMemberModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-xl transition">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Invite Modal -->
+    <div id="show-invite-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm hidden">
+        <div class="bg-st-channels p-6 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800">
+            <h3 class="text-xl font-bold text-white mb-1">Invite Classmates</h3>
+            <p class="text-xs text-slate-400 mb-4">Share this code with other students so they can join this group.</p>
+            <div class="flex items-center space-x-2 mb-4">
+                <input type="text" id="display-invite-code" readonly class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-brand-500 font-mono text-sm focus:outline-none">
+                <button onclick="copyInviteCode()" class="px-4 py-3 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl transition shadow shrink-0">Copy Code</button>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeShowInviteModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-xl transition">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // State Storage
+        let isLogin = true;
+        let currentUser = null;
+        let activeGroupId = 'home';
+        let activeChannel = 'friends'; // 'friends' or text channel name or DM username
+        let activeFriendsTab = 'online';
+        let inVoiceCall = false;
+        let isMuted = false;
+        let isDeafened = false;
+        let voiceInterval = null;
+
+        // Registered Users Database Mock
+        let registeredUsers = [
+            { username: 'Jordan_Code', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Jordan' },
+            { username: 'Taylor_Notes', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Taylor' },
+            { username: 'Morgan_Physics', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Morgan' },
+            { username: 'Alex_Chem', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alex' },
+            { username: 'Casey_Bio', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Casey' }
+        ];
+
+        // Friends & Direct Messages State
+        let friends = [
+            { username: 'Jordan_Code', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Jordan', status: 'online' },
+            { username: 'Taylor_Notes', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Taylor', status: 'offline' }
+        ];
+        let pendingRequests = [
+            { username: 'Morgan_Physics', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Morgan', type: 'incoming' }
+        ];
+        let dmMessages = {
+            'Jordan_Code': [
+                { sender: 'Jordan_Code', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Jordan', text: 'Hey! Ready for the CS study group?' }
+            ]
+        };
+
+        // Initial Sample School Groups
+        let groups = [
+            {
+                id: 'grp-1',
+                name: 'Computer Science 101',
+                inviteCode: 'ST-CS101',
+                icon: '💻',
+                members: ['Jordan_Code', 'Taylor_Notes'],
+                textChannels: ['general', 'homework-help', 'exam-prep'],
+                voiceChannels: ['Study Lounge', 'Lab Voice'],
+                messages: {
+                    'general': [
+                        { sender: 'Professor_Ada', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Ada', text: 'Welcome to CS101 SchoolTalk! Office hours start at 3 PM.' }
+                    ]
+                }
+            },
+            {
+                id: 'grp-2',
+                name: 'Math Club & Tutoring',
+                inviteCode: 'ST-MATH',
+                icon: '📐',
+                members: ['Taylor_Notes'],
+                textChannels: ['general', 'calculus-notes'],
+                voiceChannels: ['Tutoring Room'],
+                messages: {
+                    'general': [
+                        { sender: 'MathTutor_Sam', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sam', text: 'Feel free to ask calculus questions anytime!' }
+                    ]
+                }
+            }
+        ];
+
+        // Initialization
+        window.onload = function() {
+            const savedUser = localStorage.getItem('schooltalk_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainInterface();
+            }
+        };
+
+        // Switch Login / Register Mode
+        function toggleAuthMode() {
+            isLogin = !isLogin;
+            document.getElementById('auth-title').innerText = isLogin ? 'Welcome to SchoolTalk' : 'Register for SchoolTalk';
+            document.getElementById('auth-subtitle').innerText = isLogin ? 'Connect with classmates, study groups, and campus channels.' : 'Create an account to join study groups and study calls.';
+            document.getElementById('auth-submit-btn').innerText = isLogin ? 'Log In' : 'Sign Up';
+            document.getElementById('auth-switch-text').innerText = isLogin ? 'Need a SchoolTalk account?' : 'Already registered?';
+            document.getElementById('auth-switch-btn').innerText = isLogin ? 'Register' : 'Log In';
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            if (!username) return;
+
+            currentUser = {
+                username: username,
+                avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+            };
+
+            if (!registeredUsers.some(u => u.username === username)) {
+                registeredUsers.push(currentUser);
+            }
+
+            localStorage.setItem('schooltalk_user', JSON.stringify(currentUser));
+            showMainInterface();
+        }
+
+        function logout() {
+            localStorage.removeItem('schooltalk_user');
+            currentUser = null;
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('main-interface').classList.add('hidden');
+            leaveVoiceCall();
+        }
+
+        function showMainInterface() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-interface').classList.remove('hidden');
+            
+            document.getElementById('user-display-name').innerText = currentUser.username;
+            document.getElementById('user-avatar-img').src = currentUser.avatar;
+
+            renderGroupList();
+            switchGroup('home');
+            updatePendingBadge();
+        }
+
+        // Group Sidebar Rendering
+        function renderGroupList() {
+            const list = document.getElementById('server-list');
+            list.innerHTML = '';
+
+            groups.forEach(group => {
+                const btn = document.createElement('button');
+                btn.className = `group relative w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-slate-800 hover:bg-brand-500 flex items-center justify-center transition-all duration-200 text-white font-bold shadow text-lg ${activeGroupId === group.id ? '!rounded-[16px] !bg-brand-500' : ''}`;
+                btn.onclick = () => switchGroup(group.id);
+                btn.innerHTML = `
+                    ${group.icon}
+                    <span class="absolute left-16 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-md shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition duration-150 z-50 pointer-events-none border border-slate-800">${group.name}</span>
+                `;
+                list.appendChild(btn);
+            });
+        }
+
+        // Switch Group / Server
+        function switchGroup(groupId) {
+            activeGroupId = groupId;
+            renderGroupList();
+
+            const textSec = document.getElementById('text-channels-section');
+            const voiceSec = document.getElementById('voice-channels-section');
+            const dmSec = document.getElementById('dm-channels-section');
+            const friendsTabs = document.getElementById('friends-nav-tabs');
+
+            if (groupId === 'home') {
+                document.getElementById('current-group-title').innerText = 'Friends & DMs';
+                document.getElementById('invite-btn').classList.add('hidden');
+                document.getElementById('add-member-btn').classList.add('hidden');
+                
+                textSec.classList.add('hidden');
+                voiceSec.classList.add('hidden');
+                dmSec.classList.remove('hidden');
+                friendsTabs.classList.remove('hidden');
+
+                renderDirectMessagesList();
+                switchChannel('friends');
+            } else {
+                const group = groups.find(g => g.id === groupId);
+                if (group) {
+                    document.getElementById('current-group-title').innerText = group.name;
+                    document.getElementById('invite-btn').classList.remove('hidden');
+                    document.getElementById('add-member-btn').classList.remove('hidden');
+
+                    textSec.classList.remove('hidden');
+                    voiceSec.classList.remove('hidden');
+                    dmSec.classList.add('hidden');
+                    friendsTabs.classList.add('hidden');
+
+                    renderChannels(group.textChannels, group.voiceChannels);
+                    switchChannel(group.textChannels[0] || 'general');
+                }
+            }
+            renderMemberList();
+        }
+
+        // Render Channels Sidebar
+        function renderChannels(textChannels, voiceChannels) {
+            const textList = document.getElementById('text-channels-list');
+            const voiceList = document.getElementById('voice-channels-list');
+
+            textList.innerHTML = '';
+            voiceList.innerHTML = '';
+
+            textChannels.forEach(ch => {
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-st-hover hover:text-slate-200 transition ${activeChannel === ch ? 'bg-st-active !text-white font-semibold' : ''}`;
+                btn.onclick = () => switchChannel(ch);
+                btn.innerHTML = `<i class="fa-solid fa-hashtag mr-2 text-[10px] text-slate-500"></i> ${ch}`;
+                textList.appendChild(btn);
+            });
+
+            voiceChannels.forEach(vch => {
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-st-hover hover:text-slate-200 transition`;
+                btn.onclick = () => joinVoiceCall(vch);
+                btn.innerHTML = `
+                    <div class="flex items-center"><i class="fa-solid fa-volume-high mr-2 text-[10px] text-slate-500"></i> ${vch}</div>
+                    <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 font-semibold">Join</span>
+                `;
+                voiceList.appendChild(btn);
+            });
+        }
+
+        // Render DM list on Home Sidebar
+        function renderDirectMessagesList() {
+            const dmList = document.getElementById('dm-channels-list');
+            dmList.innerHTML = '';
+
+            const friendsBtn = document.createElement('button');
+            friendsBtn.className = `w-full flex items-center px-2 py-2 rounded-lg text-xs text-slate-300 hover:bg-st-hover transition mb-2 ${activeChannel === 'friends' ? 'bg-st-active !text-white font-semibold' : ''}`;
+            friendsBtn.onclick = () => switchChannel('friends');
+            friendsBtn.innerHTML = `<i class="fa-solid fa-user-group mr-2 text-brand-500"></i> Friends`;
+            dmList.appendChild(friendsBtn);
+
+            friends.forEach(friend => {
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-st-hover hover:text-slate-200 transition ${activeChannel === friend.username ? 'bg-st-active !text-white font-semibold' : ''}`;
+                btn.onclick = () => openDirectMessage(friend.username);
+                btn.innerHTML = `
+                    <div class="relative mr-2">
+                        <img src="${friend.avatar}" class="w-5 h-5 rounded-full bg-slate-800">
+                        <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 ${friend.status === 'online' ? 'bg-emerald-500' : 'bg-slate-500'} rounded-full"></span>
+                    </div>
+                    <span class="truncate">${friend.username}</span>
+                `;
+                dmList.appendChild(btn);
+            });
+        }
+
+        // Switch Channel or View
+        function switchChannel(channelName) {
+            activeChannel = channelName;
+            const friendsDash = document.getElementById('friends-dashboard');
+            const messagesCont = document.getElementById('messages-container');
+            const chatInputWrap = document.getElementById('chat-input-wrapper');
+            const hashSpan = document.getElementById('chat-header-hash');
+
+            if (activeGroupId === 'home') {
+                renderDirectMessagesList();
+                if (channelName === 'friends') {
+                    friendsDash.classList.remove('hidden');
+                    messagesCont.classList.add('hidden');
+                    chatInputWrap.classList.add('hidden');
+                    document.getElementById('chat-header-title').innerText = 'Friends';
+                    hashSpan.innerHTML = '<i class="fa-solid fa-user-group text-brand-500 text-sm"></i>';
+                    renderFriendsDashboard();
+                } else {
+                    friendsDash.classList.add('hidden');
+                    messagesCont.classList.remove('hidden');
+                    chatInputWrap.classList.remove('hidden');
+                    document.getElementById('chat-header-title').innerText = channelName;
+                    document.getElementById('chat-input').placeholder = `Message @${channelName}`;
+                    hashSpan.innerText = '@';
+                    renderMessages();
+                }
+            } else {
+                friendsDash.classList.add('hidden');
+                messagesCont.classList.remove('hidden');
+                chatInputWrap.classList.remove('hidden');
+                document.getElementById('chat-header-title').innerText = channelName;
+                document.getElementById('chat-input').placeholder = `Message #${channelName}`;
+                hashSpan.innerText = '#';
+                renderChannels(groups.find(g=>g.id===activeGroupId).textChannels, groups.find(g=>g.id===activeGroupId).voiceChannels);
+                renderMessages();
+            }
+        }
+
+        // Friends Dashboard Management
+        function setFriendsTab(tab) {
+            activeFriendsTab = tab;
+            ['online', 'all', 'pending', 'add'].forEach(t => {
+                const btn = document.getElementById(`tab-friends-${t}`);
+                if (t === tab) {
+                    btn.className = t === 'add' ? 'px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-emerald-600 shadow' : 'px-2.5 py-1 rounded-md text-xs font-medium text-white bg-slate-800 shadow';
+                } else {
+                    btn.className = t === 'add' ? 'px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition' : 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition';
+                }
+            });
+            renderFriendsDashboard();
+        }
+
+        function renderFriendsDashboard() {
+            const addContent = document.getElementById('friends-tab-add-content');
+            const listContent = document.getElementById('friends-tab-list-content');
+            const container = document.getElementById('friends-list-container');
+
+            if (activeFriendsTab === 'add') {
+                addContent.classList.remove('hidden');
+                listContent.classList.add('hidden');
+                renderDiscoverUsers();
+            } else {
+                addContent.classList.add('hidden');
+                listContent.classList.remove('hidden');
+                container.innerHTML = '';
+
+                let filterList = [];
+                if (activeFriendsTab === 'online') filterList = friends.filter(f => f.status === 'online');
+                else if (activeFriendsTab === 'all') filterList = friends;
+                else if (activeFriendsTab === 'pending') filterList = pendingRequests;
+
+                if (filterList.length === 0) {
+                    container.innerHTML = `<div class="text-slate-500 text-xs py-8 text-center">No classmates found here.</div>`;
+                    return;
+                }
+
+                filterList.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center justify-between p-3 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl transition';
+                    
+                    if (activeFriendsTab === 'pending') {
+                        el.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                <img src="${item.avatar}" class="w-10 h-10 rounded-full bg-slate-800">
+                                <div>
+                                    <div class="text-xs font-bold text-white">${item.username}</div>
+                                    <div class="text-[10px] text-slate-400 capitalize">${item.type} Friend Request</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${item.type === 'incoming' ? `
+                                    <button onclick="acceptFriendRequest('${item.username}')" class="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs transition" title="Accept"><i class="fa-solid fa-check"></i></button>
+                                ` : ''}
+                                <button onclick="declineFriendRequest('${item.username}')" class="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg text-xs transition" title="Decline/Cancel"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        `;
+                    } else {
+                        el.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                <div class="relative">
+                                    <img src="${item.avatar}" class="w-10 h-10 rounded-full bg-slate-800">
+                                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 ${item.status === 'online' ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-slate-900 rounded-full"></span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">${item.username}</div>
+                                    <div class="text-[10px] text-slate-400 capitalize">${item.status}</div>
+                                </div>
+                            </div>
+                            <button onclick="openDirectMessage('${item.username}')" class="p-2 bg-slate-800 hover:bg-brand-500 text-slate-300 hover:text-white rounded-lg text-xs transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-message"></i>
+                                <span class="text-xs font-medium">Message</span>
+                            </button>
+                        `;
+                    }
+                    container.appendChild(el);
+                });
+            }
+        }
+
+        // Render Discover Users List for Adding Friends
+        function renderDiscoverUsers() {
+            const list = document.getElementById('discover-users-list');
+            list.innerHTML = '';
+
+            const availableUsers = registeredUsers.filter(u => 
+                u.username !== currentUser.username && 
+                !friends.some(f => f.username === u.username)
+            );
+
+            if (availableUsers.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-500 italic">No new students to discover right now.</div>`;
+                return;
+            }
+
+            availableUsers.forEach(u => {
+                const isPending = pendingRequests.some(p => p.username === u.username);
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded-xl';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${u.avatar}" class="w-9 h-9 rounded-full bg-slate-800">
+                        <span class="text-xs font-bold text-white">${u.username}</span>
+                    </div>
+                    ${isPending ? `
+                        <span class="text-[10px] text-amber-400 font-medium bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">Request Sent</span>
+                    ` : `
+                        <button onclick="sendFriendRequest('${u.username}')" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow">Add Friend</button>
+                    `}
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function sendFriendRequestFromInput() {
+            const input = document.getElementById('add-friend-input');
+            const name = input.value.trim();
+            if (!name) return;
+            sendFriendRequest(name);
+            input.value = '';
+        }
+
+        function sendFriendRequest(username) {
+            if (username === currentUser.username) {
+                alert("You cannot add yourself as a friend.");
+                return;
+            }
+            if (friends.some(f => f.username === username)) {
+                alert(`${username} is already your friend.`);
+                return;
+            }
+            if (!pendingRequests.some(p => p.username === username)) {
+                const targetUser = registeredUsers.find(u => u.username === username) || {
+                    username: username,
+                    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+                };
+                pendingRequests.push({ username: targetUser.username, avatar: targetUser.avatar, type: 'outgoing' });
+                updatePendingBadge();
+                renderFriendsDashboard();
+            }
+        }
+
+        function acceptFriendRequest(username) {
+            const reqIndex = pendingRequests.findIndex(p => p.username === username);
+            if (reqIndex !== -1) {
+                const req = pendingRequests[reqIndex];
+                pendingRequests.splice(reqIndex, 1);
+                friends.push({ username: req.username, avatar: req.avatar, status: 'online' });
+                updatePendingBadge();
+                renderFriendsDashboard();
+            }
+        }
+
+        function declineFriendRequest(username) {
+            const reqIndex = pendingRequests.findIndex(p => p.username === username);
+            if (reqIndex !== -1) {
+                pendingRequests.splice(reqIndex, 1);
+                updatePendingBadge();
+                renderFriendsDashboard();
+            }
+        }
+
+        function updatePendingBadge() {
+            const badge = document.getElementById('pending-badge');
+            const count = pendingRequests.filter(p => p.type === 'incoming').length;
+            if (count > 0) {
+                badge.innerText = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function openDirectMessage(username) {
+            if (!dmMessages[username]) dmMessages[username] = [];
+            switchChannel(username);
+        }
+
+        // Direct Server Friend Invites Modal
+        function openAddMemberModal() {
+            const list = document.getElementById('invite-friends-list');
+            list.innerHTML = '';
+            const currentGroup = groups.find(g => g.id === activeGroupId);
+
+            if (!currentGroup) return;
+
+            const addableFriends = friends.filter(f => !currentGroup.members || !currentGroup.members.includes(f.username));
+
+            if (addableFriends.length === 0) {
+                list.innerHTML = `<div class="text-xs text-slate-500 py-4 text-center">All your friends are already in this study group!</div>`;
+            } else {
+                addableFriends.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-xl';
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-2.5">
+                            <img src="${f.avatar}" class="w-8 h-8 rounded-full bg-slate-800">
+                            <span class="text-xs font-medium text-white">${f.username}</span>
+                        </div>
+                        <button onclick="addFriendToCurrentGroup('${f.username}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Add</button>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            document.getElementById('add-member-modal').classList.remove('hidden');
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('add-member-modal').classList.add('hidden');
+        }
+
+        function addFriendToCurrentGroup(username) {
+            const group = groups.find(g => g.id === activeGroupId);
+            if (group) {
+                if (!group.members) group.members = [];
+                if (!group.members.includes(username)) {
+                    group.members.push(username);
+                }
+                openAddMemberModal(); // Refresh modal list
+                renderMemberList();
+            }
+        }
+
+        // Render Messages in Chat window
+        function renderMessages() {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
+
+            let channelMsgs = [];
+            if (activeGroupId === 'home') {
+                channelMsgs = dmMessages[activeChannel] || [];
+            } else {
+                const group = groups.find(g => g.id === activeGroupId);
+                if (group && group.messages && group.messages[activeChannel]) {
+                    channelMsgs = group.messages[activeChannel];
+                }
+            }
+
+            channelMsgs.forEach(msg => {
+                const msgEl = document.createElement('div');
+                msgEl.className = 'flex items-start space-x-3 group';
+                msgEl.innerHTML = `
+                    <img src="${msg.avatar}" class="w-9 h-9 rounded-full bg-slate-800 object-cover mt-0.5 border border-slate-700">
+                    <div>
+                        <div class="flex items-baseline space-x-2">
+                            <span class="font-bold text-xs text-white hover:underline cursor-pointer">${msg.sender}</span>
+                            <span class="text-[10px] text-slate-500">Today at 10:30 AM</span>
+                        </div>
+                        <div class="text-xs text-slate-300 mt-1 leading-relaxed">${msg.text}</div>
+                    </div>
+                `;
+                container.appendChild(msgEl);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Send Text Message
+        function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (activeGroupId === 'home') {
+                if (!dmMessages[activeChannel]) dmMessages[activeChannel] = [];
+                dmMessages[activeChannel].push({
+                    sender: currentUser.username,
+                    avatar: currentUser.avatar,
+                    text: text
+                });
+            } else {
+                const group = groups.find(g => g.id === activeGroupId);
+                if (group) {
+                    if (!group.messages) group.messages = {};
+                    if (!group.messages[activeChannel]) group.messages[activeChannel] = [];
+
+                    group.messages[activeChannel].push({
+                        sender: currentUser.username,
+                        avatar: currentUser.avatar,
+                        text: text
+                    });
+                }
+            }
+
+            input.value = '';
+            renderMessages();
+        }
+
+        // Render Classmate Member List Sidebar
+        function renderMemberList() {
+            const list = document.getElementById('members-list');
+            list.innerHTML = '';
+
+            let currentGroupMembers = [];
+            if (activeGroupId === 'home') {
+                currentGroupMembers = [currentUser, ...friends];
+            } else {
+                const group = groups.find(g => g.id === activeGroupId);
+                const gMembers = (group && group.members) ? group.members : [];
+                currentGroupMembers = [currentUser, ...friends.filter(f => gMembers.includes(f.username))];
+            }
+
+            document.getElementById('online-count').innerText = currentGroupMembers.length;
+
+            currentGroupMembers.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center space-x-2.5 p-1.5 rounded-lg hover:bg-st-hover cursor-pointer transition';
+                item.innerHTML = `
+                    <div class="relative">
+                        <img src="${user.avatar}" class="w-7 h-7 rounded-full bg-slate-800 object-cover border border-slate-700">
+                        <span class="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <span class="text-xs font-medium text-slate-300 truncate">${user.username || user.name}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Voice Call Simulated Actions
+        function joinVoiceCall(channelName) {
+            inVoiceCall = true;
+            document.getElementById('voice-panel').classList.remove('hidden');
+            document.getElementById('voice-channel-name').innerText = channelName;
+            startVoiceVisualization();
+        }
+
+        function leaveVoiceCall() {
+            inVoiceCall = false;
+            document.getElementById('voice-panel').classList.add('hidden');
+            if (voiceInterval) clearInterval(voiceInterval);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteIcon = document.getElementById('mute-icon');
+            const muteText = document.getElementById('mute-text');
+
+            if (isMuted) {
+                muteIcon.className = 'fa-solid fa-microphone-slash text-rose-400';
+                muteText.innerText = 'Muted';
+                muteText.className = 'text-rose-400 font-semibold';
+            } else {
+                muteIcon.className = 'fa-solid fa-microphone';
+                muteText.innerText = 'Mute';
+                muteText.className = '';
+            }
+        }
+
+        function toggleDeafen() {
+            isDeafened = !isDeafened;
+            const deafenIcon = document.getElementById('deafen-icon');
+            const deafenText = document.getElementById('deafen-text');
+
+            if (isDeafened) {
+                deafenIcon.className = 'fa-solid fa-headphones-simple text-rose-400';
+                deafenText.innerText = 'Deafened';
+                deafenText.className = 'text-rose-400 font-semibold';
+            } else {
+                deafenIcon.className = 'fa-solid fa-headphones';
+                deafenText.innerText = 'Deafen';
+                deafenText.className = '';
+            }
+        }
+
+        function startVoiceVisualization() {
+            if (voiceInterval) clearInterval(voiceInterval);
+            const bars = [
+                document.getElementById('bar1'),
+                document.getElementById('bar2'),
+                document.getElementById('bar3'),
+                document.getElementById('bar4'),
+                document.getElementById('bar5')
+            ];
+
+            voiceInterval = setInterval(() => {
+                if (isMuted || isDeafened) {
+                    bars.forEach(bar => bar.style.height = '4px');
+                    return;
+                }
+                bars.forEach(bar => {
+                    const height = Math.floor(Math.random() * 14) + 3;
+                    bar.style.height = `${height}px`;
+                });
+            }, 80);
+        }
+
+        // Profile Avatar Upload Logic
+        function openProfileModal() {
+            document.getElementById('modal-avatar-preview').src = currentUser.avatar;
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    currentUser.avatar = dataUrl;
+                    document.getElementById('user-avatar-img').src = dataUrl;
+                    document.getElementById('modal-avatar-preview').src = dataUrl;
+                    localStorage.setItem('schooltalk_user', JSON.stringify(currentUser));
+                    renderMemberList();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Group Creation & Invites
+        function openCreateGroupModal() {
+            document.getElementById('create-group-modal').classList.remove('hidden');
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('create-group-modal').classList.add('hidden');
+        }
+
+        function createGroup() {
+            const nameInput = document.getElementById('new-group-name');
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            const newGroup = {
+                id: `grp-${Date.now()}`,
+                name: name,
+                inviteCode: `ST-${Math.floor(1000 + Math.random() * 9000)}`,
+                icon: name.charAt(0).toUpperCase(),
+                textChannels: ['general', 'study-resources'],
+                voiceChannels: ['Study Voice Room'],
+                messages: {
+                    'general': [{ sender: 'System', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SchoolTalk', text: `Welcome to the ${name} study group!` }]
+                }
+            };
+
+            groups.push(newGroup);
+            nameInput.value = '';
+            closeCreateGroupModal();
+            switchGroup(newGroup.id);
+        }
+
+        function openJoinInviteModal() {
+            document.getElementById('join-invite-modal').classList.remove('hidden');
+        }
+
+        function closeJoinInviteModal() {
+            document.getElementById('join-invite-modal').classList.add('hidden');
+        }
+
+        function joinGroupByInvite() {
+            const codeInput = document.getElementById('invite-code-input').value.trim();
+            const foundGroup = groups.find(g => g.inviteCode.toLowerCase() === codeInput.toLowerCase());
+
+            if (foundGroup) {
+                switchGroup(foundGroup.id);
+                closeJoinInviteModal();
+            } else {
+                alert('Invalid SchoolTalk Invite Code! Try ST-CS101 or ST-MATH.');
+            }
+        }
+
+        function showInviteCodeModal() {
+            const group = groups.find(g => g.id === activeGroupId);
+            if (group) {
+                document.getElementById('display-invite-code').value = group.inviteCode;
+                document.getElementById('show-invite-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeShowInviteModal() {
+            document.getElementById('show-invite-modal').classList.add('hidden');
+        }
+
+        function copyInviteCode() {
+            const copyText = document.getElementById('display-invite-code');
+            copyText.select();
+            document.execCommand('copy');
+        }
+    </script>
+</body>
+</html>
